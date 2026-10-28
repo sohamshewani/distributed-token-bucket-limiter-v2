@@ -1,0 +1,85 @@
+[build-system]
+requires = ["setuptools>=68.0.0", "wheel>=0.41.0", "Cython>=3.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "distributed-token-bucket-limiter"
+version = "1.0.0"
+description = "A high-performance distributed token bucket rate limiter for Python"
+readme = "README.md"
+authors = [
+    { name = "Engineering Team", email = "eng@example.com" }
+]
+license = { text = "MIT" }
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "redis>=4.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-asyncio>=0.21.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "mypy>=1.0.0",
+    "Cython>=3.0.0",
+]
+benchmark = [
+    "pytest-benchmark>=4.0.0",
+]
+
+[tool.setuptools]
+packages = ["distributed_token_bucket"]
+ext-modules = [
+    { name = "distributed_token_bucket._core", sources = ["src/distributed_token_bucket/_core.pyx"] }
+]
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.distutils.build_ext]
+define-macros = "CYTHON_TRACE_NOGIL=0"
+# Production-grade optimization flags injected via extra_compile_args in setup.py if dynamic, 
+# but natively supported globally via CFLAGS environment or setuptools configurations where applicable.
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q --import-mode=importlib"
+testpaths = ["tests"]
+
+[tool.black]
+line-length = 88
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
+
+[tool.isort]
+profile = "black"
+line-length = 88
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.custom-targets]
+# Task definitions mimicking standard Make targets for unified runners/CI
+all = ["clean", "build", "test"]
+build = "python -m pip install --no-build-isolation -e .[dev]"
+test = "pytest tests/ || (if [ -d \"tests\" ]; then exit 1; else echo 'No tests directory found, skipping.'; exit 0; fi)"
+clean = "rm -rf build/ dist/ *.egg-info src/*.egg-info src/distributed_token_bucket/*.c src/distributed_token_bucket/*.so src/distributed_token_bucket/*.pyd .pytest_cache .mypy_cache .coverage || true"
+benchmark = "pytest benchmarks/ || (if [ -d \"benchmarks\" ]; then exit 1; else echo 'No benchmarks directory found, skipping.'; exit 0; fi)"
